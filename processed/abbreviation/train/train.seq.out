@@ -1,0 +1,147 @@
+O O O O B-fare_basis_code
+O O O O B-fare_basis_code
+O O O O B-fare_basis_code O
+O O O O B-fare_basis_code
+O O O O O B-fare_basis_code O
+O O O O B-fare_basis_code
+O O O O B-fare_basis_code O
+O O B-airport_code O O
+O O O O O O B-fare_basis_code O O O B-fare_basis_code
+O O B-airport_code
+O O O B-fare_basis_code O
+O O B-airport_code
+O O O B-fare_basis_code
+O O O B-restriction_code I-restriction_code O
+O O B-airport_code
+O O O B-restriction_code I-restriction_code
+O O O O B-airline_code O
+O O O O O B-fare_basis_code O O O O O O B-fare_basis_code
+O O B-airline_code O O
+O O O O B-fare_basis_code
+O O B-days_code
+O O B-fare_basis_code O O O O
+O O B-airline_code
+O O O O B-fare_basis_code O
+O O O O B-airline_code O
+O O O B-restriction_code I-restriction_code
+O O B-airline_code O O
+O O B-airline_code
+O O B-airline_code
+O B-airline_code
+O O B-airline_code O
+O O O O B-airline_code O
+O O O B-fare_basis_code O O
+O O B-airport_code
+O O B-airline_code O
+O O B-restriction_code O
+O O O B-restriction_code I-restriction_code
+O O O B-restriction_code I-restriction_code
+O O B-meal_code I-meal_code O O O B-meal
+O O O O B-fare_basis_code O
+O O O O B-fare_basis_code
+O O B-airport_code O O
+O O B-meal_code O O
+O O B-airport_code
+O O B-airline_code O
+O O O O B-fare_basis_code O
+O O O B-restriction_code I-restriction_code O
+O O B-meal_code O O O B-meal
+O O B-airport_code O
+O O O O O O B-fare_basis_code O O O B-fare_basis_code
+O O B-fare_basis_code O O O O
+O O B-airline_code
+O O O O O B-fare_basis_code O
+O O O O O B-class_type I-class_type
+O O O B-meal O B-meal_code O O
+O O O O B-fare_basis_code
+O O O B-restriction_code I-restriction_code
+O O O B-fare_basis_code O
+O O O O B-fare_basis_code
+O O O O B-fare_basis_code O B-fare_basis_code
+O O O B-restriction_code I-restriction_code O
+O O O B-restriction_code I-restriction_code
+O O B-airport_code
+O O B-airline_code
+O O O O B-fare_basis_code
+O O O O O O O O
+O O O O O O B-fromloc.city_name O B-toloc.city_name I-toloc.city_name
+O O B-airline_code O
+O O B-fare_basis_code O
+O O B-airport_code O
+O O O O B-fare_basis_code
+O O O B-fare_basis_code O
+O B-airline_code O O B-airline_name
+O O B-fare_basis_code O O
+O O B-airport_code
+O O B-airline_code
+O O O O O O O B-fare_basis_code O B-fare_basis_code
+O O O O O B-fare_basis_code O
+O O O O B-fare_basis_code
+O O O O O B-meal_code I-meal_code I-meal_code
+O O O O O B-fare_basis_code O
+O O O B-restriction_code I-restriction_code
+O O O O B-fare_basis_code
+O O O O B-fare_basis_code
+O O B-airport_code
+O O O O O B-airline_name I-airline_name I-airline_name
+O O B-airport_code O
+O O B-days_code
+O O B-airport_code O O
+O O B-airline_code O O
+O O O O B-fare_basis_code O
+O O B-airline_code
+O O O O B-fare_basis_code
+O B-airline_code O O B-airline_name
+O O B-airport_code O
+O O B-days_code
+O O O O B-fare_basis_code O
+O O O B-restriction_code O
+O O B-airline_code O
+O O O O B-fare_basis_code
+O O O O O O O B-airline_code O O
+O O O O B-fare_basis_code
+O O B-airline_code O
+O O B-airport_code
+O O O B-restriction_code I-restriction_code
+O O B-airport_code
+O O B-restriction_code I-restriction_code
+O O O O O B-fare_basis_code O O O
+O O O B-fare_basis_code O
+O O O O B-fare_basis_code O
+O O O O B-aircraft_code
+O O B-airline_code
+O O O O B-fare_basis_code O
+O O B-restriction_code
+O O B-airport_code O
+O O O B-fare_basis_code
+O O O B-fare_basis_code O
+O O O O B-fare_basis_code
+O O B-airline_code
+O O O O B-fare_basis_code O
+O O O B-fare_basis_code O B-mod O B-class_type I-class_type
+O O B-airport_code
+O O O O B-fare_basis_code O
+O O O O O B-fare_basis_code O
+O O B-airline_code
+O O O B-restriction_code I-restriction_code O
+O O B-airport_code O
+O O B-airport_code O
+O O O O O O O O B-fare_basis_code
+O O B-airport_code
+O O O B-restriction_code I-restriction_code O
+O O O O B-fare_basis_code
+O O O O B-fare_basis_code O
+O O O B-fare_basis_code
+O B-meal O B-meal_code I-meal_code
+O O O O
+O O B-airport_code O O
+O O B-airline_code
+O O B-restriction_code O
+O O O O B-fare_basis_code
+O O O O O O B-restriction_code
+O O B-airport_code
+O O O O B-fare_basis_code O
+O O B-airport_code O
+O O O O B-fare_basis_code
+O O O O O B-fare_basis_code O
+O O O O B-fare_basis_code O

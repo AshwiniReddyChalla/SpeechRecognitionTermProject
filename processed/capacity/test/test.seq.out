@@ -1,0 +1,21 @@
+O O O O O O O B-aircraft_code
+O O O O O O B-airline_name B-aircraft_code
+O O O O O B-aircraft_code O O
+O O O O O O O B-aircraft_code
+O O O O O O O O B-aircraft_code
+O O O O B-airline_name O O B-fromloc.city_name O B-toloc.city_name I-toloc.city_name I-toloc.city_name
+O O O O O O O O B-aircraft_code
+O O O O O O O B-aircraft_code
+O O O O O O O O B-aircraft_code
+O O O O O O O O B-aircraft_code
+O O O O O O O O O O B-aircraft_code
+O O O O O O O B-aircraft_code
+O O O O O O B-aircraft_code
+O O O O O O O B-aircraft_code
+O O O O O O O B-aircraft_code
+O O O O O B-aircraft_code O
+O O O O O O O B-aircraft_code
+O O O O O O O B-aircraft_code
+O O O O O O O B-aircraft_code
+O O O O O O O B-aircraft_code
+O O O O O O O O B-aircraft_code

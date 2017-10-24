@@ -1,0 +1,33 @@
+O O O O B-meal_code
+O O O O B-fare_basis_code
+O O O O B-fare_basis_code
+O O B-airline_code O O
+O O O O B-fare_basis_code O
+O O B-airline_code O
+O O B-fare_basis_code O
+O O B-fare_basis_code O
+O O B-restriction_code I-restriction_code O
+O O B-restriction_code I-restriction_code O
+O O B-airport_code
+O O B-airport_code
+O O B-mod B-days_code O
+O O B-airport_code
+O O O O B-fare_basis_code O
+O O O B-airline_code O O
+O O O O B-fare_basis_code O
+O O O O B-fare_basis_code O
+O O O O B-fare_basis_code O
+O O O B-restriction_code I-restriction_code
+O O O O B-fare_basis_code O
+O O O O B-fare_basis_code O
+O O O O B-fare_basis_code O
+O O O O B-fare_basis_code O
+O O O O B-fare_basis_code O
+O O O O B-fare_basis_code O
+O O O O B-restriction_code O
+O O O O B-fare_basis_code O
+O O O O O B-booking_class
+O O O B-aircraft_code
+O O O B-aircraft_code
+O O B-aircraft_code
+O O B-airport_code

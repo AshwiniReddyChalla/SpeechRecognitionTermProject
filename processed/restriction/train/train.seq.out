@@ -1,0 +1,6 @@
+O O O O O O O O B-fromloc.city_name O B-toloc.city_name O O O O B-fare_amount I-fare_amount
+O O O B-restriction_code
+O O O O O O B-cost_relative B-round_trip I-round_trip O O B-fromloc.city_name O B-toloc.city_name
+O O B-restriction_code
+O O O B-restriction_code
+O O O B-restriction_code
