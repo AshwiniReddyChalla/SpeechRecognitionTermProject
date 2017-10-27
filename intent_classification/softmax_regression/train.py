@@ -18,10 +18,6 @@ def train():
 	
 	number_of_labels = atis.get_number_of_labels()
 	x_train, y_train = atis.get_next_batch(FLAGS.batch_size)
-	print(type(x_train))
-	print(type(y_train))
-	print(x_train[0])
-	print(y_train[0])
   	x = tf.placeholder(tf.float32, [None, FLAGS.max_in_seq_len])
 	W = tf.Variable(tf.zeros([FLAGS.max_in_seq_len, number_of_labels]))
 	b = tf.Variable(tf.zeros([number_of_labels]))
@@ -35,6 +31,11 @@ def train():
 	for _ in range(FLAGS.iterations):
 		batch_xs, batch_ys = atis.get_next_batch(FLAGS.batch_size)
 		sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
+	correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
+	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+	test_x, test_y = atis.get_test_data()
+	print(sess.run(accuracy, feed_dict={x: test_x, y_: test_y}))
+
 
 
 def main(_):

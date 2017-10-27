@@ -60,8 +60,13 @@ class AtisData(object):
     padded_inputs = []
 
     for i in range(len(input)):
-      pad = [data_helper.PAD_ID] * (self.max_in_seq_len - len(input[i]))
-      padded_inputs.append(np.array(list(input[i] + pad), np.float32))
+      data = input[i]
+      if len(data) < self.max_in_seq_len:
+        pad = [data_helper.PAD_ID for _ in range(self.max_in_seq_len - len(data))]
+        data.extend(pad);
+      else:
+        data = data[:self.max_in_seq_len]
+      padded_inputs.append(np.array(data, np.float32))
 
     return np.array(padded_inputs)
 
@@ -74,13 +79,15 @@ class AtisData(object):
 
     return np.array(one_hot_encoded_labels)
 
+  def get_test_data(self):
+    return (self.get_padded_data(self.in_seq_test), self.get_one_hot_encoded_labels(self.labels_test))
 
   def get_next_batch(self, batch_size):
     train_input = []
     train_labels = []
     counter = 0
-    train_data_size = len(train_input)
-    last_index = self.batch_index+batch_size
+    train_data_size = len(self.in_seq_train)
+    last_index = self.batch_index + batch_size
     if last_index <= train_data_size:
       train_input = self.in_seq_train[self.batch_index : last_index]
       train_labels = self.labels_train[self.batch_index : last_index]
