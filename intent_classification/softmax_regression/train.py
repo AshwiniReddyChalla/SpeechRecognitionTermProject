@@ -1,0 +1,44 @@
+import tensorflow as tf
+
+import sys
+sys.path.append("../")
+import atis_data
+
+FLAGS = tf.app.flags.FLAGS
+tf.app.flags.DEFINE_string("data_dir", '../../ATIS', "Data directory")
+tf.app.flags.DEFINE_integer("in_vocab_size", 10000, "max vocab Size.")
+tf.app.flags.DEFINE_string("max_in_seq_len", 20, "max in seq length")
+tf.app.flags.DEFINE_integer("max_data_size", 4000, "max training data size")
+tf.app.flags.DEFINE_integer("batch_size", 500, "batch size")
+tf.app.flags.DEFINE_integer("iterations", 5000, "number of iterations")
+
+def train():
+	atis = atis_data.AtisData(FLAGS.data_dir, FLAGS.in_vocab_size,
+			 FLAGS.max_in_seq_len, FLAGS.max_data_size)
+	
+	number_of_labels = atis.get_number_of_labels()
+	x_train, y_train = atis.get_next_batch(FLAGS.batch_size)
+	print(type(x_train))
+	print(type(y_train))
+	print(x_train[0])
+	print(y_train[0])
+  	x = tf.placeholder(tf.float32, [None, FLAGS.max_in_seq_len])
+	W = tf.Variable(tf.zeros([FLAGS.max_in_seq_len, number_of_labels]))
+	b = tf.Variable(tf.zeros([number_of_labels]))
+	y_ = tf.placeholder(tf.float32, [None, number_of_labels])
+
+	y = tf.matmul(x, W)+b
+	cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y_,logits=y)
+	train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
+	sess = tf.InteractiveSession()
+	tf.global_variables_initializer().run()
+	for _ in range(FLAGS.iterations):
+		batch_xs, batch_ys = atis.get_next_batch(FLAGS.batch_size)
+		sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
+
+
+def main(_):
+    train()
+
+if __name__ == "__main__":
+  tf.app.run()
