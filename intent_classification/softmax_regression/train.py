@@ -11,15 +11,15 @@ tf.app.flags.DEFINE_string("max_in_seq_len", 20, "max in seq length")
 tf.app.flags.DEFINE_integer("max_data_size", 4000, "max training data size")
 tf.app.flags.DEFINE_integer("batch_size", 500, "batch size")
 tf.app.flags.DEFINE_integer("iterations", 5000, "number of iterations")
+tf.app.flags.DEFINE_integer("embedding_size", 25, "size of embedding")
 
 def train():
 	atis = atis_data.AtisData(FLAGS.data_dir, FLAGS.in_vocab_size,
-			 FLAGS.max_in_seq_len, FLAGS.max_data_size)
+			 FLAGS.max_in_seq_len, FLAGS.max_data_size, FLAGS.embedding_size)
 	
 	number_of_labels = atis.get_number_of_labels()
-	x_train, y_train = atis.get_next_batch(FLAGS.batch_size)
-  	x = tf.placeholder(tf.float32, [None, FLAGS.max_in_seq_len])
-	W = tf.Variable(tf.zeros([FLAGS.max_in_seq_len, number_of_labels]))
+  	x = tf.placeholder(tf.float32, [None, FLAGS.max_in_seq_len*FLAGS.embedding_size])
+	W = tf.Variable(tf.zeros([FLAGS.embedding_size*FLAGS.max_in_seq_len, number_of_labels]))
 	b = tf.Variable(tf.zeros([number_of_labels]))
 	y_ = tf.placeholder(tf.float32, [None, number_of_labels])
 
