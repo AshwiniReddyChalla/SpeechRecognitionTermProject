@@ -28,7 +28,8 @@ class AtisData(object):
     self.labels_dev = self.read_data_into_memory(tokenized_label_path_dev);
     self.in_seq_test = self.read_data_into_memory(tokenized_in_seq_path_test);
     self.labels_test = self.read_data_into_memory(tokenized_label_path_test);
-    self.vocab_size = self.get_vocab_size(in_vocab_path);
+    self.in_vocab_path = in_vocab_path;
+    self.vocab_size = self.get_vocab_size();
 
     if(len(self.in_seq_train) != len(self.labels_train)) :
        raise ValueError("Number of train labels != Number of train inputs : %d != %d",len(self.in_seq_train), len(self.labels_train))
@@ -41,7 +42,8 @@ class AtisData(object):
 
     self.no_of_class_labels = self.get_number_of_labels();
     self.embed_size = embed_size
-
+    self.word_embedding = None
+    
     if embed_size > 0:
       self.word_embedding = word_embedding.WordEmbedding(
                         self.in_seq_train,
@@ -50,8 +52,8 @@ class AtisData(object):
                         2,
                         1)
 
-  def get_vocab_size(self, vocab_file):
-    with tf.gfile.GFile(vocab_file, mode="r") as source_file:
+  def get_vocab_size(self):
+    with tf.gfile.GFile(self.in_vocab_path, mode="r") as source_file:
       lines = source_file.readlines()
       return len(lines)
 
