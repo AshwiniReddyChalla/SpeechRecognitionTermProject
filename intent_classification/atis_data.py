@@ -16,12 +16,14 @@ class AtisData(object):
     self.max_data_size = max_data_size
     self.batch_index = 0;
 
+    # Get words in the form of numbers :  0 - vocabsize ; 0 for unk
     data = data_helper.get_tokenized_data(data_folder, vocab_size)
     tokenized_in_seq_path_train, tokenized_label_path_train = data[0]
     tokenized_in_seq_path_dev, tokenized_label_path_dev = data[1]
     tokenized_in_seq_path_test, tokenized_label_path_test = data[2]
     in_vocab_path, label_vocab_path = data[3]
 
+    # read the data in form of numbers into memory
     self.in_seq_train = self.read_data_into_memory(tokenized_in_seq_path_train);
     self.labels_train = self.read_data_into_memory(tokenized_label_path_train);
     self.in_seq_dev = self.read_data_into_memory(tokenized_in_seq_path_dev);
@@ -44,13 +46,16 @@ class AtisData(object):
     self.embed_size = embed_size
     self.word_embedding = None
     
+    # construct word embedding if required by the model
     if embed_size > 0:
       self.word_embedding = word_embedding.WordEmbedding(
                         self.in_seq_train,
+                        self.in_seq_test,
                         self.vocab_size,
                         embed_size,
-                        2,
-                        1)
+                        2, #context_window
+                        1 #context_size
+                        )
 
   def get_vocab_size(self):
     with tf.gfile.GFile(self.in_vocab_path, mode="r") as source_file:
@@ -76,6 +81,7 @@ class AtisData(object):
   def set_max_in_seq_len(self, max_in_seq_len):
     self.max_in_seq_len = max_in_seq_len
 
+  # pad the data to get all sentences with particular sentence length
   def get_padded_data(self, input):
     padded_inputs = []
 
@@ -99,23 +105,61 @@ class AtisData(object):
 
     return np.array(one_hot_encoded_labels)
 
-  def get_embedded_data(self, data):
-    if not self.word_embedding:
-      return data
-    embedded_data = np.ndarray((len(data), self.max_in_seq_len*self.embed_size), dtype=np.int32)
+  def get_one_hot_encoded_input_data(self, data):
+    one_hot_encoded_input_data = np.ndarray((len(data), self.max_in_seq_len*self.vocab_size), dtype=np.int32)
     for i in range(len(data)):
-      e_d = []
+      o_h = []
       line = data[i]
       for j in range(self.max_in_seq_len):
-        e_d.extend(self.word_embedding.get_embedding(line[j]))
-      embedded_data[i] = e_d
+        one_hot = [0 for _ in range(self.vocab_size)]
+        if line[j] > 0:
+          one_hot[line[j] - 1] = 1
+        o_h.extend(one_hot)
+      one_hot_encoded_input_data[i] = o_h
+    return one_hot_encoded_input_data
+
+  def get_embedded_input_data(self, data):
+    if not self.word_embedding:
+      return data
+    embedded_data = np.ndarray((len(data), self.max_in_seq_len, self.embed_size), dtype=np.int32)
+    for i in range(len(data)):
+      line = data[i]
+      for j in range(self.max_in_seq_len):
+        embedded_data[i,j,:] = self.word_embedding.get_embedding(line[j])
     
     return embedded_data
 
-  def get_test_data(self):
-    return (self.get_embedded_data(self.get_padded_data(self.in_seq_test)), self.get_one_hot_encoded_labels(self.labels_test))
+  def get_test_data(self, one_hot_y=True, one_hot_x=False):
+    padded_data = self.get_padded_data(self.in_seq_test)
+    if one_hot_x :
+      X = self.get_one_hot_encoded_input_data(padded_data)
+    else:
+      X = self.get_embedded_input_data(padded_data)
 
-  def get_next_batch(self, batch_size):
+    Y = self.labels_test
+    if one_hot_y:
+      Y = self.get_one_hot_encoded_labels(Y)
+    else:
+      Y = np.array(Y)
+    return (X,Y)
+
+  def get_train_data(self, one_hot_y=True, one_hot_x=False):
+    padded_data = self.get_padded_data(self.in_seq_train)
+    if one_hot_x :
+      X = self.get_one_hot_encoded_input_data(padded_data)
+    else:
+      X = self.get_embedded_input_data(padded_data)
+
+    Y = self.labels_train
+    if one_hot_y:
+      Y = self.get_one_hot_encoded_labels(Y)
+    else:
+      Y = np.array(Y)
+    return (X,Y)
+    
+  #Gets batch size of training data each time looping over training data.
+  # Returns one-hot-encoded Y, [one-hot encoded or embedded vectors of data]
+  def get_next_batch(self, batch_size, one_hot_y=True, one_hot_x=False):
     train_input = []
     train_labels = []
     counter = 0
@@ -136,4 +180,15 @@ class AtisData(object):
         train_labels.extend(self.labels_train[: self.batch_index])
 
     padded_data = self.get_padded_data(train_input)
-    return (self.get_embedded_data(padded_data), self.get_one_hot_encoded_labels(train_labels))
+
+    if one_hot_x :
+      X = self.get_one_hot_encoded_input_data(padded_data)
+    else:
+      X = self.get_embedded_input_data(padded_data)
+
+    Y = train_labels
+    if one_hot_y:
+      Y = self.get_one_hot_encoded_labels(Y)
+    else:
+      Y = np.array(Y)
+    return (X,Y)
