@@ -5,12 +5,12 @@ sys.path.append("../")
 import atis_data
 
 FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_string("data_dir", '../../ATIS', "Data directory")
+tf.app.flags.DEFINE_string("data_dir", '../../NEW_ATIS', "Data directory")
 tf.app.flags.DEFINE_integer("in_vocab_size", 10000, "max vocab Size.")
 tf.app.flags.DEFINE_string("max_in_seq_len", 30, "max in seq length")
 tf.app.flags.DEFINE_integer("max_data_size", 10000, "max training data size")
 tf.app.flags.DEFINE_integer("batch_size", 100, "batch size")
-tf.app.flags.DEFINE_integer("iterations", 10000, "number of iterations")
+tf.app.flags.DEFINE_integer("iterations", 5000, "number of iterations")
 tf.app.flags.DEFINE_integer("embedding_size", 300, "size of embedding")
 
 def train():
@@ -32,7 +32,7 @@ def train():
 	# [None,sentence_length,embed_size]
 	train_y = tf.placeholder(tf.float32, [None, num_classes])
 	embedded_expanded = tf.expand_dims(train_x, -1)
-	# [None,sentence_length, feature_size, 1)
+	# [None,sentence_length, embed_size, 1)
 	
 	W_projection = tf.get_variable("W_projection",
 			shape=[num_filters_total, num_classes],
@@ -88,10 +88,11 @@ def train():
 		for i in range(FLAGS.iterations):
 			batch_xs, batch_ys = atis.get_next_batch(FLAGS.batch_size)
 			sess.run([train_op, global_step, loss, accuracy], feed_dict={train_x: batch_xs, train_y: batch_ys})
-			if i%100 == 0:
+			if i%1000 == 0:
+				x, y = atis.get_train_data()
 				test_x, test_y = atis.get_test_data()
 				print("test accuracy: " + str(sess.run(accuracy, feed_dict={train_x: test_x, train_y: test_y})) + 
-					" train accuracy : " + str(sess.run(accuracy, feed_dict={train_x: batch_xs, train_y: batch_ys})))
+					" train accuracy : " + str(sess.run(accuracy, feed_dict={train_x: x, train_y: y})))
 
 def main(_):
     train()

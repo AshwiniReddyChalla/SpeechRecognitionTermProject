@@ -187,8 +187,11 @@ def create_label_vocab(vocabulary_path, data_path):
         if counter % 100000 == 0:
           print("  processing line %d" % counter)
         label = line.strip()
-        vocab[label] = 1
-      label_list = START_VOCAB_dict['no_padding'] + sorted(vocab)
+        if label in vocab:
+          vocab[label] += 1
+        else:
+          vocab[label] = 1
+      label_list =  sorted(vocab, key=vocab.get, reverse=True)
       with gfile.GFile(vocabulary_path, mode="w") as vocab_file:
         for k in label_list:
           vocab_file.write(k + "\n")

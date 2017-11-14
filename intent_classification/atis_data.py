@@ -96,10 +96,12 @@ class AtisData(object):
 
     return np.array(padded_inputs)
 
-  def get_one_hot_encoded_labels(self, labels):
+  def get_one_hot_encoded_labels(self, labels, no_of_class_labels = None):
+    if no_of_class_labels is None:
+      no_of_class_labels = self.no_of_class_labels
     one_hot_encoded_labels = []
     for label in labels:
-      data = [0 for _ in range(self.no_of_class_labels)]
+      data = [0 for _ in range(no_of_class_labels)]
       data[label[0]-1] = 1
       one_hot_encoded_labels.append(np.array(data, np.int32))
 
@@ -129,33 +131,32 @@ class AtisData(object):
     
     return embedded_data
 
-  def get_test_data(self, one_hot_y=True, one_hot_x=False):
-    padded_data = self.get_padded_data(self.in_seq_test)
+  def get_test_data(self, one_hot_y=True, one_hot_x=False, no_of_class_labels=None):
+    if no_of_class_labels is None:
+      no_of_class_labels = self.no_of_class_labels
+    return self.get_input_output_data(self.in_seq_test, self.labels_test, one_hot_y, one_hot_x, no_of_class_labels)
+
+  def get_train_data(self, one_hot_y=True, one_hot_x=False, no_of_class_labels=None):
+    if no_of_class_labels is None:
+      no_of_class_labels = self.no_of_class_labels
+    return self.get_input_output_data(self.in_seq_train, self.labels_train, one_hot_y, one_hot_x, no_of_class_labels)
+
+  def get_input_output_data(self, in_seq, labels, one_hot_y=True, one_hot_x=False, no_of_class_labels=None):
+    if no_of_class_labels is None:
+      no_of_class_labels = self.no_of_class_labels
+    padded_data = self.get_padded_data(in_seq)
     if one_hot_x :
       X = self.get_one_hot_encoded_input_data(padded_data)
     else:
       X = self.get_embedded_input_data(padded_data)
 
-    Y = self.labels_test
+    Y = labels
     if one_hot_y:
-      Y = self.get_one_hot_encoded_labels(Y)
+      Y = self.get_one_hot_encoded_labels(Y, no_of_class_labels)
     else:
       Y = np.array(Y)
     return (X,Y)
 
-  def get_train_data(self, one_hot_y=True, one_hot_x=False):
-    padded_data = self.get_padded_data(self.in_seq_train)
-    if one_hot_x :
-      X = self.get_one_hot_encoded_input_data(padded_data)
-    else:
-      X = self.get_embedded_input_data(padded_data)
-
-    Y = self.labels_train
-    if one_hot_y:
-      Y = self.get_one_hot_encoded_labels(Y)
-    else:
-      Y = np.array(Y)
-    return (X,Y)
     
   #Gets batch size of training data each time looping over training data.
   # Returns one-hot-encoded Y, [one-hot encoded or embedded vectors of data]
@@ -179,16 +180,4 @@ class AtisData(object):
         train_input.extend(self.in_seq_train[: self.batch_index])
         train_labels.extend(self.labels_train[: self.batch_index])
 
-    padded_data = self.get_padded_data(train_input)
-
-    if one_hot_x :
-      X = self.get_one_hot_encoded_input_data(padded_data)
-    else:
-      X = self.get_embedded_input_data(padded_data)
-
-    Y = train_labels
-    if one_hot_y:
-      Y = self.get_one_hot_encoded_labels(Y)
-    else:
-      Y = np.array(Y)
-    return (X,Y)
+    return self.get_input_output_data(train_input, train_labels, one_hot_y, one_hot_x)
