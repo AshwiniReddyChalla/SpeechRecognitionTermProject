@@ -11,12 +11,16 @@ class TransferAtisData(object):
 	            vocab_size,
 	            max_in_seq_len,
 	            max_data_size,
-	            no_of_base_intents = 8):
+	            no_of_base_intents = 8,
+	            no_of_new_intents = -1 # negative indicates all remaining
+	            ):
 		if no_of_base_intents > 14 or no_of_base_intents < 1:
 			raise ValueError("Number of base intents should be between [1, 14]. %d", no_of_base_intents)
+
 		self.max_in_seq_len = max_in_seq_len
 		self.max_data_size = max_data_size
 		self.no_of_base_intents = no_of_base_intents
+		self.no_of_new_intents = no_of_new_intents
 
 		old_atis = atis_data.AtisData(data_folder, vocab_size, max_in_seq_len, max_data_size)
 		data = self.prepare_data_for_transfer_learning(old_atis)
@@ -49,6 +53,10 @@ class TransferAtisData(object):
 		labels = [old_atis.labels_train, old_atis.labels_test, old_atis.labels_valid]
 		in_seq = [old_atis.in_seq_train, old_atis.in_seq_test, old_atis.in_seq_valid]
 
+		transfer_intent_limit = 15
+		if self.no_of_new_intents > 0:
+			transfer_intent_limit = self.no_of_base_intents + 1
+
 		for counter in range(3):
 			labels_base =[]
 			in_seq_base = []
@@ -60,7 +68,7 @@ class TransferAtisData(object):
 					labels_base.append(labels[counter][i])
 					in_seq_base.append(in_seq[counter][i])
 				# restricting numbr of intents here
-				elif labels[counter][i][0] < 15:
+				elif labels[counter][i][0] < transfer_intent_limit:
 					labels_transfer.append(labels[counter][i])
 					in_seq_transfer.append(in_seq[counter][i])
 
@@ -198,8 +206,9 @@ class TransferAtisData(object):
 		
 
 	def get_next_batch_for_transfer_learning(self, batch_size, one_hot_y=True, one_hot_x=False):
-		transfer_train_X , transfer_train_Y = self.process_next_batch(False, int(0.2*batch_size), one_hot_y, one_hot_x)
-		base_train_X, base_train_Y = self.process_next_batch(True, int(0.8*batch_size), one_hot_y, one_hot_x)
+		transfer_ratio = self.get_number_of_transfer_labels()/float(self.get_number_of_base_labels() + self.get_number_of_transfer_labels())
+		transfer_train_X , transfer_train_Y = self.process_next_batch(False, int(transfer_ratio*batch_size), one_hot_y, one_hot_x)
+		base_train_X, base_train_Y = self.process_next_batch(True, int((1-transfer_ratio)*batch_size), one_hot_y, one_hot_x)
 
 		[train_X, train_Y] = (np.concatenate((base_train_X, transfer_train_X), axis = 0) , 
 			np.concatenate((base_train_Y, transfer_train_Y), axis = 0))
@@ -220,8 +229,3 @@ class TransferAtisData(object):
 		weights = [label_weight_map[label] for label in labels]
 		total_weight = sum(label_weight_map.values())
 		return (weights, total_weight)
-
-
-
-
-

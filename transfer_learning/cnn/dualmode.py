@@ -3,22 +3,18 @@ import math
 import sys
 import os.path
 import numpy as np
+import shutil
 from plot_accuracy import plot_accuracy
 from plot_accuracy import plot_confusion_matrix
 from sklearn.metrics import confusion_matrix
 
-def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_training = True, restore_from_ckpt = True):
+def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_training = True, restore_from_ckpt = True, save_to_ckpt = False):
 	num_filters = 16
 	filter_sizes = [2, 3, 4, 5, 6, 7]
 	num_filters_total = num_filters * len(filter_sizes)
 	normal_initializer = tf.random_normal_initializer(stddev=0.1)
 
-	if base_training:
-		if os.path.exists('./ckpt'):
-			return
-		scope_name = "base"
-	else:
-		scope_name = "transfer"
+
 
 	g = tf.Graph()
 	with g.as_default(): 
@@ -166,7 +162,9 @@ def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_tra
 				print("test accuracy: " + str(sess.run(accuracy, feed_dict={train_x: test_x, train_y: test_y, dropout_keep_prob:1.0})) + 
 				" new test accuracy: " + str(sess.run(accuracy, feed_dict={train_x: new_test_x, train_y: new_test_y, dropout_keep_prob:1.0})))
 
-			if base_training:
+			if base_training or save_to_ckpt:
+				if os.path.exists("./ckpt/"):
+					shutil.rmtree("./ckpt/")
 				save_path = saver.save(sess, "./ckpt/cnn.ckpt")
 				print embedding.eval()
 				print "model saved in " + save_path
@@ -175,8 +173,24 @@ def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_tra
 			y_actual = y_actual.eval()
 			y_pred = sess.run(predictions, feed_dict={train_x: test_x, train_y: test_y, dropout_keep_prob:1.0})
 			cm_matrix = confusion_matrix(y_actual, y_pred)
-			plot_confusion_matrix(cm_matrix, classes=[str(i) for i in range(1, num_classes+1)], 
-				normalize=True, title='Normalized confusion matrix')
+			
+			accuracy_file_name = "./graphs/"
+			cm_file_name = "./graphs/"
+			if base_training:
+				accuracy_file_name += ("base_" + str(num_classes) +".html")
+				cm_file_name += ("cm_base_" + str(num_classes) + ".png")
+			elif not restore_from_ckpt:
+				accuracy_file_name += ("all.html")
+				cm_file_name += ("cm_all.png")
+			elif save_to_ckpt:
+				accuracy_file_name += ("transfer_" + str(num_classes) +".html")
+				cm_file_name += ("cm_transfer_" + str(num_classes) + ".png")
+			else:
+				accuracy_file_name += ("transfer_all_at_once.html")
+				cm_file_name += ("cm_transfer_all_at_once" + ".png")
 
-			plot_accuracy(train_acc_list, valid_acc_list, 40)
+			plot_confusion_matrix(cm_matrix, classes=[str(i) for i in range(1, num_classes+1)], 
+				file_name=cm_file_name, normalize=True, title='Normalized confusion matrix')
+
+			plot_accuracy(train_acc_list, valid_acc_list, 40, accuracy_file_name)
 

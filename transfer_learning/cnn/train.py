@@ -15,22 +15,24 @@ tf.app.flags.DEFINE_integer("batch_size", 100, "batch size")
 tf.app.flags.DEFINE_integer("iterations", 2000, "number of iterations")
 tf.app.flags.DEFINE_integer("embedding_size", 300, "size of embedding")
 tf.app.flags.DEFINE_integer("no_of_base_intents", 8, "number of base intents")
-
-
-# define parameters of cnn
-num_filters = 32
-filter_sizes = [2, 3, 4]
-num_filters_total = num_filters * len(filter_sizes)
-dropout_keep_prob = 0.4
-normal_initializer = tf.random_normal_initializer(stddev=0.1)
-
+tf.app.flags.DEFINE_integer("total_no_of_intents", 15, "number of total intents")
 
 def transfer_train():
+
 	atis = transfer_atis_data.TransferAtisData(FLAGS.data_dir, FLAGS.in_vocab_size,
 			 FLAGS.max_in_seq_len, FLAGS.max_data_size, FLAGS.no_of_base_intents)
+	#base training
 	dualmode.train(atis, FLAGS.max_in_seq_len, FLAGS.embedding_size, FLAGS.iterations, FLAGS.batch_size, True)
+	#transfer learning for all new classes
 	dualmode.train(atis, FLAGS.max_in_seq_len, FLAGS.embedding_size, FLAGS.iterations, FLAGS.batch_size, False)
-	#dualmode.train(atis, FLAGS.max_in_seq_len, FLAGS.embedding_size, FLAGS.iterations, FLAGS.batch_size, False, False)
+	#learn all classes
+	dualmode.train(atis, FLAGS.max_in_seq_len, FLAGS.embedding_size, FLAGS.iterations, FLAGS.batch_size, False, False)
+
+	#training one class at a time
+	for no_of_base_intents in range(FLAGS.no_of_base_intents, FLAGS.total_no_of_intents):
+		atis = transfer_atis_data.TransferAtisData(FLAGS.data_dir, FLAGS.in_vocab_size,
+			 FLAGS.max_in_seq_len, FLAGS.max_data_size, no_of_base_intents, 1)
+		dualmode.train(atis, FLAGS.max_in_seq_len, FLAGS.embedding_size, FLAGS.iterations, FLAGS.batch_size, False, True, True)
 
 	
 def main(_):
