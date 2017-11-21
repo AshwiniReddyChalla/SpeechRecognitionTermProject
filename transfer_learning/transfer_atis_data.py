@@ -1,6 +1,8 @@
+from sklearn.utils import shuffle
 import tensorflow as tf
 import numpy as np
 import sys
+import fractions
 sys.path.append("../../intent_classification")
 import atis_data 
 class TransferAtisData(object):
@@ -36,6 +38,7 @@ class TransferAtisData(object):
 		self.labels_transfer_valid = data[10]
 		self.in_seq_transfer_valid = data[11]
 
+		self.base_batch_index = 0
 		self.transfer_batch_index = 0
 
 		self.old_atis.no_of_class_labels = self.get_number_of_base_labels()
@@ -43,8 +46,8 @@ class TransferAtisData(object):
 
 	def prepare_data_for_transfer_learning(self, old_atis):
 		result = []
-		labels = [old_atis.labels_train, old_atis.labels_test, old_atis.labels_dev]
-		in_seq = [old_atis.in_seq_train, old_atis.in_seq_test, old_atis.in_seq_dev]
+		labels = [old_atis.labels_train, old_atis.labels_test, old_atis.labels_valid]
+		in_seq = [old_atis.in_seq_train, old_atis.in_seq_test, old_atis.in_seq_valid]
 
 		for counter in range(3):
 			labels_base =[]
@@ -56,7 +59,8 @@ class TransferAtisData(object):
 				if labels[counter][i][0] < self.no_of_base_intents:
 					labels_base.append(labels[counter][i])
 					in_seq_base.append(in_seq[counter][i])
-				else:
+				# restricting numbr of intents here
+				elif labels[counter][i][0] < 15:
 					labels_transfer.append(labels[counter][i])
 					in_seq_transfer.append(in_seq[counter][i])
 
@@ -65,7 +69,15 @@ class TransferAtisData(object):
 			result.append(labels_transfer)
 			result.append(in_seq_transfer)
 
+		#self.print_stats(result)
 		return result
+
+	def print_stats(self, data):
+		for i in range(0, 11, 2):
+			[uni, counts] = np.unique(data[i], return_counts = True)
+			print uni
+			print counts
+			print "\n\n"
 
 	def get_number_of_transfer_labels(self):
 		unique_labels = []
@@ -87,58 +99,129 @@ class TransferAtisData(object):
 	def get_base_train_data(self, one_hot_y=True, one_hot_x=False):
 		return self.old_atis.get_train_data(one_hot_y, one_hot_x)
 
-	def get_transfer_test_data(self, one_hot_y=True, one_hot_x=False):
+	def get_base_valid_data(self, one_hot_y=True, one_hot_x=False):
+		return self.old_atis.get_valid_data(one_hot_y, one_hot_x)
+
+	def get_whole_valid_data(self, one_hot_y=True, one_hot_x=False):
+		base_valid_X, base_valid_Y = self.old_atis.get_valid_data(one_hot_y, one_hot_x, self.total_no_of_class_labels)
+
+		#get transfer data
+		transfer_valid_X, transfer_valid_Y = self.get_only_new_valid_data()
+
+		return (np.concatenate((base_valid_X, transfer_valid_X), axis = 0) , 
+			np.concatenate((base_valid_Y, transfer_valid_Y), axis = 0))
+
+	def get_whole_test_data(self, one_hot_y=True, one_hot_x=False):
 		base_test_X, base_test_Y = self.old_atis.get_test_data(one_hot_y, one_hot_x, self.total_no_of_class_labels)
 
 		#get transfer data
-		transfer_test_X, transfer_test_Y = self.old_atis.get_input_output_data(
-					self.in_seq_transfer_test, 
-					self.labels_transfer_test, 
-					one_hot_y, one_hot_x, self.total_no_of_class_labels)
+		transfer_test_X, transfer_test_Y = self.get_only_new_test_data()
 
 		return (np.concatenate((base_test_X, transfer_test_X), axis = 0) , 
 			np.concatenate((base_test_Y, transfer_test_Y), axis = 0))
 
-	def get_transfer_train_data(self, one_hot_y=True, one_hot_x=False):
+	def get_whole_train_data(self, one_hot_y=True, one_hot_x=False):
 		base_train_X, base_train_Y = self.old_atis.get_train_data(one_hot_y, one_hot_x, self.total_no_of_class_labels)
 
 		#get transfer data
-		transfer_train_X, transfer_train_Y = self.old_atis.get_input_output_data(
-					self.in_seq_transfer_train, 
-					self.labels_transfer_train, 
-					one_hot_y, one_hot_x, self.total_no_of_class_labels)
+		transfer_train_X, transfer_train_Y = self.get_only_new_train_data()
 
 		return (np.concatenate((base_train_X, transfer_train_X), axis = 0) , 
 			np.concatenate((base_train_Y, transfer_train_Y), axis = 0))
 
-	def get_next_batch_for_transfer_learning(self, batch_size, one_hot_y=True, one_hot_x=False):
-		transfer_train_X, transfer_train_Y = self.old_atis.get_input_output_data(
+	def get_only_new_valid_data(self, one_hot_y=True, one_hot_x=False):
+		return self.old_atis.get_input_output_data(
+					self.in_seq_transfer_valid, 
+					self.labels_transfer_valid, 
+					one_hot_y, one_hot_x, self.total_no_of_class_labels)
+
+	def get_only_new_test_data(self, one_hot_y=True, one_hot_x=False):
+		return self.old_atis.get_input_output_data(
+					self.in_seq_transfer_test, 
+					self.labels_transfer_test, 
+					one_hot_y, one_hot_x, self.total_no_of_class_labels)
+
+	def get_only_new_train_data(self, one_hot_y=True, one_hot_x=False):
+		return self.old_atis.get_input_output_data(
 					self.in_seq_transfer_train, 
 					self.labels_transfer_train, 
 					one_hot_y, one_hot_x, self.total_no_of_class_labels)
 
+	def process_next_batch(self, base, batch_size, one_hot_y=True, one_hot_x=False):
 		train_input = []
 		train_labels = []
 		counter = 0
-		train_data_size = len(self.in_seq_train)
-		last_index = self.transfer_batch_index + batch_size
-		if last_index <= train_data_size:
-			train_input = self.in_seq_train[self.transfer_batch_index : last_index]
-			train_labels = self.labels_train[self.transfer_batch_index : last_index]
-			if last_index == train_data_size:
-				self.transfer_batch_index = 0
-			else:
-				self.transfer_batch_index = last_index
+		if base:
+			seq = self.in_seq_train
+			labels = self.labels_train
+			start = self.base_batch_index
 		else:
-			train_input = self.in_seq_train[self.transfer_batch_index :]
-			train_labels = self.labels_train[self.transfer_batch_index :]
-			self.transfer_batch_index = batch_size - len(train_input) 
-			train_input.extend(self.in_seq_train[: self.transfer_batch_index])
-			train_labels.extend(self.labels_train[: self.transfer_batch_index])
+			seq = self.in_seq_transfer_train
+			labels = self.labels_transfer_train
+			start = self.transfer_batch_index
 
-		base_train_X, base_train_Y = self.old_atis.get_input_output_data(train_input, train_labels, one_hot_y, one_hot_x, self.total_no_of_class_labels)	
-		return (np.concatenate((base_train_X, transfer_train_X), axis = 0) , 
+		train_data_size = len(seq)
+		last_index = start + batch_size
+		if last_index <= train_data_size:
+			train_input = seq[start : last_index]
+			train_labels = labels[start : last_index]
+			if last_index == train_data_size:
+				start = 0
+			else:
+				start = last_index
+		else:
+			train_input = seq[start :]
+			train_labels = labels[start :]
+			start = batch_size - len(train_input) 
+
+			if base:
+				#epoch completed - shuffle data
+				self.in_seq_train, self.labels_train = shuffle(self.in_seq_train, self.labels_train)
+
+				#give remaining data
+				train_input.extend(self.in_seq_train[: start])
+				train_labels.extend(self.labels_train[: start])
+			else:
+				#epoch completed - shuffle data
+				self.in_seq_transfer_train, self.labels_transfer_train = shuffle(self.in_seq_transfer_train, self.labels_transfer_train)
+
+				#give remaining data
+				train_input.extend(self.in_seq_transfer_train[: start])
+				train_labels.extend(self.labels_transfer_train[: start])
+
+		if base:
+			self.base_batch_index = start
+		else:
+			self.transfer_batch_index = start
+
+		return self.old_atis.get_input_output_data(train_input, train_labels, one_hot_y, one_hot_x, self.total_no_of_class_labels)	
+		
+
+	def get_next_batch_for_transfer_learning(self, batch_size, one_hot_y=True, one_hot_x=False):
+		transfer_train_X , transfer_train_Y = self.process_next_batch(False, int(0.2*batch_size), one_hot_y, one_hot_x)
+		base_train_X, base_train_Y = self.process_next_batch(True, int(0.8*batch_size), one_hot_y, one_hot_x)
+
+		[train_X, train_Y] = (np.concatenate((base_train_X, transfer_train_X), axis = 0) , 
 			np.concatenate((base_train_Y, transfer_train_Y), axis = 0))
+
+		#[weights, total_weight] = self.get_weights(train_Y)
+		return [train_X, train_Y]
+
+	def get_weights(self, labels):
+		labels = np.argmax(labels, axis=1)
+		[uni, counts] = np.unique(labels, return_counts = True)
+		
+		lcm = reduce(lambda x,y: x*y//fractions.gcd(x, y), counts)
+		
+		label_weight_map = {}
+		for i in range(len(counts)):
+			label_weight_map[uni[i]] = float(lcm)/counts[i]
+		
+		weights = [label_weight_map[label] for label in labels]
+		total_weight = sum(label_weight_map.values())
+		return (weights, total_weight)
+
+
 
 
 
