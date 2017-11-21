@@ -1,3 +1,4 @@
+from sklearn.utils import shuffle
 import tensorflow as tf
 import numpy as np
 
@@ -19,15 +20,15 @@ class AtisData(object):
     # Get words in the form of numbers :  0 - vocabsize ; 0 for unk
     data = data_helper.get_tokenized_data(data_folder, vocab_size)
     tokenized_in_seq_path_train, tokenized_label_path_train = data[0]
-    tokenized_in_seq_path_dev, tokenized_label_path_dev = data[1]
+    tokenized_in_seq_path_valid, tokenized_label_path_valid = data[1]
     tokenized_in_seq_path_test, tokenized_label_path_test = data[2]
     in_vocab_path, label_vocab_path = data[3]
 
     # read the data in form of numbers into memory
     self.in_seq_train = self.read_data_into_memory(tokenized_in_seq_path_train);
     self.labels_train = self.read_data_into_memory(tokenized_label_path_train);
-    self.in_seq_dev = self.read_data_into_memory(tokenized_in_seq_path_dev);
-    self.labels_dev = self.read_data_into_memory(tokenized_label_path_dev);
+    self.in_seq_valid = self.read_data_into_memory(tokenized_in_seq_path_valid);
+    self.labels_valid = self.read_data_into_memory(tokenized_label_path_valid);
     self.in_seq_test = self.read_data_into_memory(tokenized_in_seq_path_test);
     self.labels_test = self.read_data_into_memory(tokenized_label_path_test);
     self.in_vocab_path = in_vocab_path;
@@ -36,8 +37,8 @@ class AtisData(object):
     if(len(self.in_seq_train) != len(self.labels_train)) :
        raise ValueError("Number of train labels != Number of train inputs : %d != %d",len(self.in_seq_train), len(self.labels_train))
 
-    if(len(self.in_seq_dev) != len(self.labels_dev)) :
-       raise ValueError("Number of dev labels != Number of dev inputs : %d != %d",len(self.in_seq_dev), len(self.labels_dev))
+    if(len(self.in_seq_valid) != len(self.labels_valid)) :
+       raise ValueError("Number of valid labels != Number of valid inputs : %d != %d",len(self.in_seq_valid), len(self.labels_valid))
 
     if(len(self.in_seq_test) != len(self.labels_test)) :
        raise ValueError("Number of test labels != Number of test inputs : %d != %d",len(self.in_seq_test), len(self.labels_test))
@@ -102,7 +103,7 @@ class AtisData(object):
     one_hot_encoded_labels = []
     for label in labels:
       data = [0 for _ in range(no_of_class_labels)]
-      data[label[0]-1] = 1
+      data[label[0]] = 1
       one_hot_encoded_labels.append(np.array(data, np.int32))
 
     return np.array(one_hot_encoded_labels)
@@ -135,6 +136,11 @@ class AtisData(object):
     if no_of_class_labels is None:
       no_of_class_labels = self.no_of_class_labels
     return self.get_input_output_data(self.in_seq_test, self.labels_test, one_hot_y, one_hot_x, no_of_class_labels)
+
+  def get_valid_data(self, one_hot_y=True, one_hot_x=False, no_of_class_labels=None):
+    if no_of_class_labels is None:
+      no_of_class_labels = self.no_of_class_labels
+    return self.get_input_output_data(self.in_seq_valid, self.labels_valid, one_hot_y, one_hot_x, no_of_class_labels)
 
   def get_train_data(self, one_hot_y=True, one_hot_x=False, no_of_class_labels=None):
     if no_of_class_labels is None:
@@ -176,6 +182,11 @@ class AtisData(object):
     else:
         train_input = self.in_seq_train[self.batch_index :]
         train_labels = self.labels_train[self.batch_index :]
+
+        #epoch completed - shuffle data
+        self.in_seq_train, self.labels_train = shuffle(self.in_seq_train, self.labels_train)
+       
+        #give remaining data
         self.batch_index = batch_size - len(train_input) 
         train_input.extend(self.in_seq_train[: self.batch_index])
         train_labels.extend(self.labels_train[: self.batch_index])

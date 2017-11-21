@@ -12,7 +12,7 @@ tf.app.flags.DEFINE_integer("in_vocab_size", 10000, "max vocab Size.")
 tf.app.flags.DEFINE_string("max_in_seq_len", 30, "max in seq length")
 tf.app.flags.DEFINE_integer("max_data_size", 10000, "max training data size")
 tf.app.flags.DEFINE_integer("batch_size", 100, "batch size")
-tf.app.flags.DEFINE_integer("iterations", 50, "number of iterations")
+tf.app.flags.DEFINE_integer("iterations", 2000, "number of iterations")
 tf.app.flags.DEFINE_integer("embedding_size", 300, "size of embedding")
 tf.app.flags.DEFINE_integer("no_of_base_intents", 8, "number of base intents")
 
@@ -30,6 +30,7 @@ def transfer_train():
 			 FLAGS.max_in_seq_len, FLAGS.max_data_size, FLAGS.no_of_base_intents)
 	dualmode.train(atis, FLAGS.max_in_seq_len, FLAGS.embedding_size, FLAGS.iterations, FLAGS.batch_size, True)
 	dualmode.train(atis, FLAGS.max_in_seq_len, FLAGS.embedding_size, FLAGS.iterations, FLAGS.batch_size, False)
+	#dualmode.train(atis, FLAGS.max_in_seq_len, FLAGS.embedding_size, FLAGS.iterations, FLAGS.batch_size, False, False)
 
 	
 def main(_):
