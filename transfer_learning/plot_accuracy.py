@@ -5,8 +5,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import itertools
 
+plotly.offline.init_notebook_mode()
 # authenticate plotly here
-def plot_accuracy(train_accuracy, valid_accuracy, step_size):
+def plot_accuracy(train_accuracy, valid_accuracy, step_size, file_name):
     data = []
     data.append(go.Scatter(
         y = np.array(train_accuracy),
@@ -39,15 +40,20 @@ def plot_accuracy(train_accuracy, valid_accuracy, step_size):
             )
         )
     )
+    '''
+    figure=go.Figure(data=data,layout=layout)
+    plotly.offline.iplot(figure, filename="mine", image="png")
+    '''
     plotly.offline.plot({
         "data": data,
         "layout": layout
     })
 
 def plot_confusion_matrix(cm, classes,
+                          file_name,
                           normalize=False,
                           title='Confusion matrix',
-                          cmap=plt.cm.Blues):
+                          cmap=plt.cm.Blues,):
     plt.figure()
     """
     This function prints and plots the confusion matrix.
@@ -76,5 +82,5 @@ def plot_confusion_matrix(cm, classes,
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-    plt.show()
+    plt.savefig(file_name)
 
