@@ -11,16 +11,20 @@ class TransferAtisData(object):
 	            vocab_size,
 	            max_in_seq_len,
 	            max_data_size,
-	            no_of_base_intents = 8,
-	            no_of_new_intents = -1 # negative indicates all remaining
+	            base_intent_start_index = 0,
+	            base_intent_end_index = 7,
+	            transfer_intent_start_index = 8,
+	            transfer_intent_end_index = 14,
+	            max_num_of_samples_per_new_class = -1
 	            ):
-		if no_of_base_intents > 14 or no_of_base_intents < 1:
-			raise ValueError("Number of base intents should be between [1, 14]. %d", no_of_base_intents)
-
+		
 		self.max_in_seq_len = max_in_seq_len
 		self.max_data_size = max_data_size
-		self.no_of_base_intents = no_of_base_intents
-		self.no_of_new_intents = no_of_new_intents
+		self.base_intent_start_index = base_intent_start_index
+		self.base_intent_end_index = base_intent_end_index
+		self.transfer_intent_start_index = transfer_intent_start_index
+		self.transfer_intent_end_index = transfer_intent_end_index
+		self.max_num_of_samples_per_new_class = max_num_of_samples_per_new_class
 
 		old_atis = atis_data.AtisData(data_folder, vocab_size, max_in_seq_len, max_data_size)
 		data = self.prepare_data_for_transfer_learning(old_atis)
@@ -53,23 +57,43 @@ class TransferAtisData(object):
 		labels = [old_atis.labels_train, old_atis.labels_test, old_atis.labels_valid]
 		in_seq = [old_atis.in_seq_train, old_atis.in_seq_test, old_atis.in_seq_valid]
 
-		transfer_intent_limit = 15
-		if self.no_of_new_intents > 0:
-			transfer_intent_limit = self.no_of_base_intents + 1
+		no_of_base_labels = self.base_intent_end_index - self.base_intent_start_index + 1
+		if self.base_intent_end_index < 0 or self.base_intent_start_index < 0:
+			no_of_base_labels = 0
 
 		for counter in range(3):
 			labels_base =[]
 			in_seq_base = []
 			labels_transfer = []
 			in_seq_transfer = []
+			#we need to restrict number of samples of new class in train dataset
+			if counter == 0:
+				#track number of samples per new class here
+				num_of_samples_per_new_class = {}
 
 			for i in range(len(labels[counter])):
-				if labels[counter][i][0] < self.no_of_base_intents:
+				current_label = labels[counter][i][0]
+				if (current_label <= self.base_intent_end_index 
+						and current_label >= self.base_intent_start_index):
 					labels_base.append(labels[counter][i])
 					in_seq_base.append(in_seq[counter][i])
-				# restricting numbr of intents here
-				elif labels[counter][i][0] < transfer_intent_limit:
-					labels_transfer.append(labels[counter][i])
+				elif (current_label <= self.transfer_intent_end_index 
+						and current_label >= self.transfer_intent_start_index):
+
+					#restricting number of samples of new class in train dataset here
+					if counter == 0 and self.max_num_of_samples_per_new_class > 0:
+						if current_label in num_of_samples_per_new_class :
+							if num_of_samples_per_new_class[current_label] >= self.max_num_of_samples_per_new_class:
+								continue
+							num_of_samples_per_new_class[current_label] += 1
+						else:
+							num_of_samples_per_new_class[current_label] = 1
+
+					# transfer new intent label id . Required for one hot encoding
+					
+
+					new_label = no_of_base_labels + current_label - self.transfer_intent_start_index
+					labels_transfer.append([new_label])
 					in_seq_transfer.append(in_seq[counter][i])
 
 			result.append(labels_base)
@@ -111,6 +135,8 @@ class TransferAtisData(object):
 		return self.old_atis.get_valid_data(one_hot_y, one_hot_x)
 
 	def get_whole_valid_data(self, one_hot_y=True, one_hot_x=False):
+		if self.get_number_of_base_labels() == 0:
+			return self.get_only_new_valid_data()
 		base_valid_X, base_valid_Y = self.old_atis.get_valid_data(one_hot_y, one_hot_x, self.total_no_of_class_labels)
 
 		#get transfer data
@@ -120,6 +146,8 @@ class TransferAtisData(object):
 			np.concatenate((base_valid_Y, transfer_valid_Y), axis = 0))
 
 	def get_whole_test_data(self, one_hot_y=True, one_hot_x=False):
+		if self.get_number_of_base_labels() == 0:
+			return self.get_only_new_test_data()
 		base_test_X, base_test_Y = self.old_atis.get_test_data(one_hot_y, one_hot_x, self.total_no_of_class_labels)
 
 		#get transfer data
@@ -129,6 +157,8 @@ class TransferAtisData(object):
 			np.concatenate((base_test_Y, transfer_test_Y), axis = 0))
 
 	def get_whole_train_data(self, one_hot_y=True, one_hot_x=False):
+		if self.get_number_of_base_labels() == 0:
+			return self.get_only_new_train_data()
 		base_train_X, base_train_Y = self.old_atis.get_train_data(one_hot_y, one_hot_x, self.total_no_of_class_labels)
 
 		#get transfer data
@@ -205,14 +235,17 @@ class TransferAtisData(object):
 		return self.old_atis.get_input_output_data(train_input, train_labels, one_hot_y, one_hot_x, self.total_no_of_class_labels)	
 		
 
-	def get_next_batch_for_transfer_learning(self, batch_size, one_hot_y=True, one_hot_x=False):
-		transfer_ratio = self.get_number_of_transfer_labels()/float(self.get_number_of_base_labels() + self.get_number_of_transfer_labels())
-		transfer_train_X , transfer_train_Y = self.process_next_batch(False, int(transfer_ratio*batch_size), one_hot_y, one_hot_x)
-		base_train_X, base_train_Y = self.process_next_batch(True, int((1-transfer_ratio)*batch_size), one_hot_y, one_hot_x)
-
-		[train_X, train_Y] = (np.concatenate((base_train_X, transfer_train_X), axis = 0) , 
-			np.concatenate((base_train_Y, transfer_train_Y), axis = 0))
-
+	def get_next_batch_for_transfer_learning(self, batch_size, one_hot_y=True, one_hot_x=False, only_new = False):
+		if not only_new and self.get_number_of_base_labels() > 0:
+			transfer_ratio = self.get_number_of_transfer_labels()/float(self.get_number_of_base_labels() + self.get_number_of_transfer_labels())
+			
+			transfer_train_X , transfer_train_Y = self.process_next_batch(False, int(transfer_ratio*batch_size), one_hot_y, one_hot_x)
+			base_train_X, base_train_Y = self.process_next_batch(True, int((1-transfer_ratio)*batch_size), one_hot_y, one_hot_x)
+			[train_X, train_Y] = (np.concatenate((base_train_X, transfer_train_X), axis = 0) , 
+				np.concatenate((base_train_Y, transfer_train_Y), axis = 0))
+		else:
+			train_X , train_Y = self.process_next_batch(False, batch_size, one_hot_y, one_hot_x)
+			
 		#[weights, total_weight] = self.get_weights(train_Y)
 		return [train_X, train_Y]
 

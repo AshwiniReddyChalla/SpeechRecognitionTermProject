@@ -4,27 +4,28 @@ import plotly.graph_objs as go
 import numpy as np
 import matplotlib.pyplot as plt
 import itertools
+from scipy.interpolate import spline
 
 plotly.offline.init_notebook_mode()
-# authenticate plotly here
-def plot_accuracy(train_accuracy, valid_accuracy, step_size, file_name):
+
+def plot_accuracy_num_train_samples(accuracy, min_samples, max_samples, step_size, name):
+    #plots a smooth curve
     data = []
+    x = np.array(range(min_samples, max_samples, step_size))
+    x_new = np.linspace(x.min(),x.max(),200)
+    y = np.array(accuracy)
+    y_new = spline(x,y,x_new)
+    '''
     data.append(go.Scatter(
-        y = np.array(train_accuracy),
-        x = np.array(range(1, step_size).extend(range(step_size, step_size*len(train_accuracy)+1, step_size))),
+        y = np.array(accuracy),
+        x = np.array(range(min_samples, max_samples, step_size)),
         mode = 'lines',
-        name = 'train_accuracy'
-    ))
-    data.append(go.Scatter(
-        y = np.array(valid_accuracy),
-        x = np.array(range(1, step_size).extend(range(step_size, step_size*len(train_accuracy)+1, step_size))),
-        mode = 'lines',
-        name = 'valid_accuracy'
+        name = name
     ))
 
     layout = go.Layout(
         xaxis=dict(
-            title='iterations',
+            title='num_of_train_samples',
             titlefont=dict(
                 family='Courier New, monospace',
                 size=18,
@@ -40,14 +41,40 @@ def plot_accuracy(train_accuracy, valid_accuracy, step_size, file_name):
             )
         )
     )
-    '''
-    figure=go.Figure(data=data,layout=layout)
-    plotly.offline.iplot(figure, filename="mine", image="png")
-    '''
+
     plotly.offline.plot({
         "data": data,
         "layout": layout
     })
+    '''
+    plt.ylabel('Test accuracy')
+    plt.xlabel('Number of training samples')
+    plt.plot(x_new,y_new)
+    plt.show()
+
+# authenticate plotly here
+def plot_accuracy(data, x_axis_title, y_axis_title, filename):
+
+    layout = go.Layout(
+        xaxis=dict(
+            title=x_axis_title,
+            titlefont=dict(
+                family='Courier New, monospace',
+                size=18,
+                color='#7f7f7f'
+            )
+        ),
+        yaxis=dict(
+            title=y_axis_title,
+            titlefont=dict(
+                family='Courier New, monospace',
+                size=18,
+                color='#7f7f7f'
+            )
+        )
+    )
+   
+    plotly.offline.plot(data, filename=filename,config = layout)
 
 def plot_confusion_matrix(cm, classes,
                           file_name,
