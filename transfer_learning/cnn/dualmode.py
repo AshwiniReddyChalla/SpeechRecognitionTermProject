@@ -8,7 +8,7 @@ from plot_accuracy import plot_accuracy
 from plot_accuracy import plot_confusion_matrix
 from sklearn.metrics import confusion_matrix
 
-def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_training = True, restore_from_ckpt = True, save_to_ckpt = False, freeze_model = False):
+def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_training = True, restore_from_ckpt = True, save_to_ckpt = False, freeze_model = False, confusion_matrix_file_name = None):
 	num_filters = 16
 	filter_sizes = [2, 3, 4, 5, 6, 7]
 	num_filters_total = num_filters * len(filter_sizes)
@@ -177,31 +177,15 @@ def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_tra
 				print("test accuracy: " + str(whole_test_accuracy) + 
 				" new test accuracy: " + str(new_test_accuracy))
 				
-			'''
-			y_actual = tf.argmax(test_y, 1)
-			y_actual = y_actual.eval()
-			y_pred = sess.run(predictions, feed_dict={train_x: test_x, train_y: test_y, dropout_keep_prob:1.0})
-			cm_matrix = confusion_matrix(y_actual, y_pred)
-			
-			accuracy_file_name = "./graphs/"
-			cm_file_name = "./graphs/"
-			if base_training:
-				accuracy_file_name += ("base_" + str(num_classes) +".html")
-				cm_file_name += ("cm_base_" + str(num_classes) + ".png")
-			elif not restore_from_ckpt:
-				accuracy_file_name += ("all.html")
-				cm_file_name += ("cm_all.png")
-			elif save_to_ckpt:
-				accuracy_file_name += ("transfer_" + str(num_classes) +".html")
-				cm_file_name += ("cm_transfer_" + str(num_classes) + ".png")
-			else:
-				accuracy_file_name += ("transfer_all_at_once.html")
-				cm_file_name += ("cm_transfer_all_at_once" + ".png")
+			if confusion_matrix_file_name is not None:
+				#plot confusion matrix
+				y_actual = tf.argmax(test_y, 1)
+				y_actual = y_actual.eval()
+				y_pred = sess.run(predictions, feed_dict={train_x: test_x, train_y: test_y, dropout_keep_prob:1.0})
+				cm_matrix = confusion_matrix(y_actual, y_pred)
 
-			plot_confusion_matrix(cm_matrix, classes=[str(i) for i in range(1, num_classes+1)], 
-				file_name=cm_file_name, normalize=True, title='Normalized confusion matrix')
+				plot_confusion_matrix(cm_matrix, classes=[str(i) for i in range(1, num_classes+1)], 
+					file_name=confusion_matrix_file_name, normalize=True, title='Confusion matrix')
 
-			plot_accuracy(train_acc_list, valid_acc_list, 40, accuracy_file_name)
-			'''
 
 			return valid_acc_new_list, valid_acc_whole_list, new_test_accuracy, whole_test_accuracy

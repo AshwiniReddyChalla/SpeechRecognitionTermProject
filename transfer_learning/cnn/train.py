@@ -21,7 +21,7 @@ tf.app.flags.DEFINE_integer("no_of_base_intents", 8, "number of base intents")
 tf.app.flags.DEFINE_integer("total_no_of_intents", 15, "number of total intents")
 
 def plot_test_accuracy_versus_samples():
-	iterations = 40
+	iterations = 30
 	
 	no_pretrain_new_test_accuracy = []
 	no_pretrain_whole_test_accuracy = []
@@ -98,16 +98,16 @@ def plot_test_accuracy_versus_samples():
 def plot_test_accuracy_versus_iterations():
 	iterations = 100
 	
-	no_pretrain_new_test_accuracy, no_pretrain_whole_test_accuracy, _, _ = train_all_without_pretrained_model(iterations)
+	no_pretrain_new_test_accuracy, no_pretrain_whole_test_accuracy, _, _ = train_all_without_pretrained_model(iterations, cm_file_name = './cm_without_pretrained.png')
 	print "with no pretrained model done ......\n\n\n"
 
 	perform_base_training(iterations)
 	print "base training done ...\n\n\n"
 
-	pretrained_freeze_new_test_accuracy, pretrained_freeze_whole_test_accuracy, _, _ = train_all_with_pretrained_frozen_model(iterations)
+	pretrained_freeze_new_test_accuracy, pretrained_freeze_whole_test_accuracy, _, _ = train_all_with_pretrained_frozen_model(iterations, cm_file_name = './cm_pretrained_frozen.png')
 	print "with pretrained and freeze done ......\n\n\n"
 	
-	pretrained_no_freeze_new_test_accuracy, pretrained_no_freeze_whole_test_accuracy, _, _ = train_all_with_pretrained_not_frozen_model(iterations)	
+	pretrained_no_freeze_new_test_accuracy, pretrained_no_freeze_whole_test_accuracy, _, _ = train_all_with_pretrained_not_frozen_model(iterations, cm_file_name = './cm_pretrained_not_frozen.png')	
 	print "with pretrained and no freeze done ......\n\n\n"
 	
 	data = []
@@ -154,32 +154,35 @@ def plot_test_accuracy_versus_iterations():
 
 	plot_accuracy(data, "iterations", "whole_test_accuracy", "whole_accuracy_iterations.html")
 
-def train_all_without_pretrained_model(iterations, num_train_samples = -1):
+def train_all_without_pretrained_model(iterations, num_train_samples = -1, cm_file_name = None):
 	atis = transfer_atis_data.TransferAtisData(FLAGS.data_dir, FLAGS.in_vocab_size,
 			 FLAGS.max_in_seq_len, FLAGS.max_data_size, 0, 7, 8, 14, max_num_of_samples_per_new_class = num_train_samples)
 	return dualmode.train(atis, FLAGS.max_in_seq_len, FLAGS.embedding_size, iterations, FLAGS.batch_size, 
 					base_training = False, 
 					restore_from_ckpt = False, 
 					save_to_ckpt = False,
-					freeze_model = False)
+					freeze_model = False,
+					confusion_matrix_file_name = cm_file_name)
 
-def train_all_with_pretrained_frozen_model(iterations, num_train_samples = -1):
+def train_all_with_pretrained_frozen_model(iterations, num_train_samples = -1, cm_file_name = None):
 	atis = transfer_atis_data.TransferAtisData(FLAGS.data_dir, FLAGS.in_vocab_size,
 			 FLAGS.max_in_seq_len, FLAGS.max_data_size, 0, 7, 8, 14, max_num_of_samples_per_new_class = num_train_samples)
 	return dualmode.train(atis, FLAGS.max_in_seq_len, FLAGS.embedding_size, iterations, FLAGS.batch_size, 
 					base_training = False, 
 					restore_from_ckpt = True, 
 					save_to_ckpt = False,
-					freeze_model = True)
+					freeze_model = True,
+					confusion_matrix_file_name = cm_file_name)
 
-def train_all_with_pretrained_not_frozen_model(iterations, num_train_samples = -1):
+def train_all_with_pretrained_not_frozen_model(iterations, num_train_samples = -1, cm_file_name = None):
 	atis = transfer_atis_data.TransferAtisData(FLAGS.data_dir, FLAGS.in_vocab_size,
 			 FLAGS.max_in_seq_len, FLAGS.max_data_size, 0, 7, 8, 14, max_num_of_samples_per_new_class = num_train_samples)
 	return dualmode.train(atis, FLAGS.max_in_seq_len, FLAGS.embedding_size, iterations, FLAGS.batch_size, 
 					base_training = False, 
 					restore_from_ckpt = True, 
 					save_to_ckpt = False,
-					freeze_model = False)
+					freeze_model = False,
+					confusion_matrix_file_name = cm_file_name)
 
 def perform_base_training(iterations):
 	atis = transfer_atis_data.TransferAtisData(FLAGS.data_dir, FLAGS.in_vocab_size,

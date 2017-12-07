@@ -74,7 +74,9 @@ def plot_accuracy(data, x_axis_title, y_axis_title, filename):
         )
     )
    
-    plotly.offline.plot(data, filename=filename,config = layout)
+    fig = go.Figure(data=data, layout=layout)
+    plotly.offline.plot(fig, filename=filename)
+    #plotly.offline.plot(data, filename=filename,config = layout)
 
 def plot_confusion_matrix(cm, classes,
                           file_name,
