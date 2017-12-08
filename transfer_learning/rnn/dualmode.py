@@ -4,19 +4,20 @@ import sys
 import os.path
 import numpy as np
 import shutil
+from tensorflow.contrib import rnn
 from plot_accuracy import plot_accuracy
 from plot_accuracy import plot_confusion_matrix
 from sklearn.metrics import confusion_matrix
 
 def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_training = True, restore_from_ckpt = True, save_to_ckpt = False, freeze_model = False, confusion_matrix_file_name = None):
-	num_filters = 16
-	filter_sizes = [2, 3, 4, 5, 6, 7]
-	num_filters_total = num_filters * len(filter_sizes)
+	
+	no_of_fw_cells = 47
+	no_of_bw_cells = 47
+	num_features_total = no_of_fw_cells + no_of_bw_cells
 	normal_initializer = tf.random_normal_initializer(stddev=0.1)
 
 	g = tf.Graph()
 	with g.as_default(): 
-		variables_to_save = {}
 
 		#get data
 		if base_training:
@@ -36,11 +37,8 @@ def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_tra
 		embedding = tf.get_variable("embedding",
 											shape=[atis.vocab_size, embedding_size],
 											initializer=normal_initializer, trainable = not freeze_model)
-		variables_to_save["embedding"] = embedding
 		embedded_words = tf.nn.embedding_lookup(embedding, train_x )#[None,sentence_length,embed_size]
 
-		embedded_expanded = tf.expand_dims(embedded_words, -1)
-		# [None,sentence_length, embed_size, 1)
 		if base_training:
 			W_projection_name = "W_base"
 			b_projection_name = "b_base"
@@ -49,47 +47,28 @@ def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_tra
 			b_projection_name = "b_projection"
 			no_of_base_labels = atis.get_number_of_base_labels()
 			W_base = tf.get_variable("W_base",
-				shape=[num_filters_total, no_of_base_labels]) #[feature _size,label_size]
+				shape=[num_features_total, no_of_base_labels]) #[feature _size,label_size]
 			b_base = tf.get_variable("b_base",shape=[1, no_of_base_labels]) #[label_size] 
 
 		W_projection = tf.get_variable(W_projection_name,
-				shape=[num_filters_total, num_classes],
+				shape=[num_features_total, num_classes],
 				initializer=normal_initializer) #[feature _size,label_size]
 		b_projection = tf.get_variable(b_projection_name,shape=[1, num_classes]) #[label_size] 
 
-		pooled_outputs = []
-		for i,filter_size in enumerate(filter_sizes):
-			with tf.name_scope("convolution-pooling-%s" %filter_size):
-				filter = tf.get_variable("filter-%s"%filter_size,
-							[filter_size, embedding_size,1,num_filters],
-							initializer=normal_initializer, trainable = not freeze_model)
-				#[filter_size, embed_size ,1, num_filters]
-				variables_to_save["filter-%s"%filter_size] = filter
+		#define forward and backward cells
+		lstm_fw_cell=rnn.DropoutWrapper(rnn.BasicLSTMCell(no_of_fw_cells),
+				output_keep_prob=dropout_keep_prob)
+		lstm_bw_cell=rnn.DropoutWrapper(rnn.BasicLSTMCell(no_of_bw_cells),
+				output_keep_prob=dropout_keep_prob)
 
-				conv = tf.nn.conv2d(embedded_expanded, filter, strides=[1,1,1,1], padding="VALID",name="conv") 
-				#shape:[batch_size, sequence_length - filter_size + 1, 1, num_filters]
+		#create dynamic bidirectional recurrent neural network
+		outputs,_=tf.nn.bidirectional_dynamic_rnn(lstm_fw_cell,lstm_bw_cell,
+				embedded_words,dtype=tf.float32) 
+		#outputs = [[batch_size,sequence_length,no_of_fw_cells], [batch_size,sequence_length,no_of_bw_cells] ]
+		output_rnn=tf.concat(outputs,axis=2) #[batch_size,sequence_length,num_features_total]
+		features = tf.reduce_mean(output_rnn,axis=1) #[batch_size,num_features_total]
 
-				b = tf.get_variable("b-%s"%filter_size, [num_filters], trainable = not freeze_model)
-				variables_to_save["b-%s"%filter_size] = b
-				h = tf.nn.relu(tf.nn.bias_add(conv,b),"relu") 
-				#shape:[batch_size, sequence_length - filter_size + 1, 1, num_filters]
-
-				pooled = tf.nn.max_pool(h, 
-										ksize=[1, max_in_seq_len-filter_size+1,1,1], 
-										strides=[1,1,1,1], 
-										padding='VALID',
-										name="pool")
-				#shape:[batch_size, 1, 1, num_filters]
-
-				pooled_outputs.append(pooled)
-
-		h_pool=tf.concat(pooled_outputs, 3) #shape:[batch_size, 1, 1, num_filters_total]
-		h_pool_flat=tf.reshape(h_pool,[-1,num_filters_total])
-
-		h_drop = tf.nn.dropout(h_pool_flat, keep_prob = dropout_keep_prob) 
-		#[None, num_filters_total]
-
-		logits = tf.matmul(h_drop, W_projection) + b_projection
+		logits = tf.matmul(features, W_projection) + b_projection
 		losses = tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=train_y)
 		loss = tf.reduce_mean(losses)  
 
@@ -123,7 +102,7 @@ def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_tra
 				print "restoring ....."
 				saver.restore(sess, "./ckpt/cnn.ckpt")
 				no_of_transfer_labels = atis.get_number_of_transfer_labels()
-				W_init = tf.concat([W_base, tf.zeros([num_filters_total, no_of_transfer_labels], tf.float32)], axis=1)
+				W_init = tf.concat([W_base, tf.zeros([num_features_total, no_of_transfer_labels], tf.float32)], axis=1)
 				b_init = tf.concat([b_base, tf.zeros([1, no_of_transfer_labels], tf.float32)], axis=1)
 				
 				W_projection_assign = tf.assign(W_projection, W_init)
@@ -213,4 +192,3 @@ def get_nb_params_shape(shape):
 	for dim in shape:
 		nb_params = nb_params*int(dim)
 	return nb_params 
-
