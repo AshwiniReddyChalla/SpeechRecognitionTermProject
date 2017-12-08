@@ -21,7 +21,7 @@ tf.app.flags.DEFINE_integer("no_of_base_intents", 8, "number of base intents")
 tf.app.flags.DEFINE_integer("total_no_of_intents", 15, "number of total intents")
 
 def plot_test_accuracy_versus_samples():
-	iterations = 30
+	iterations = 70
 	
 	no_pretrain_new_test_accuracy = []
 	no_pretrain_whole_test_accuracy = []
@@ -194,4 +194,4 @@ def perform_base_training(iterations):
 					freeze_model = False)
 
 if __name__ == "__main__":
-  plot_test_accuracy_versus_iterations()
+  plot_test_accuracy_versus_samples()

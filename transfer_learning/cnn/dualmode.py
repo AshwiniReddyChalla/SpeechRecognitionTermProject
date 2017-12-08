@@ -96,7 +96,7 @@ def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_tra
 		predictions = tf.argmax(logits, 1)
 		correct_predictions = tf.equal(predictions, tf.argmax(train_y, 1))
 		accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
-		params = tf.global_variables()
+		params = tf.trainable_variables()
 		global_step = tf.Variable(0, trainable=False)
 		starter_learning_rate = 0.005
 		learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,

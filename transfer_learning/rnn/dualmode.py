@@ -75,13 +75,14 @@ def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_tra
 		predictions = tf.argmax(logits, 1)
 		correct_predictions = tf.equal(predictions, tf.argmax(train_y, 1))
 		accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
-		params = tf.global_variables()
+		params = tf.trainable_variables()
 		global_step = tf.Variable(0, trainable=False)
 		starter_learning_rate = 0.005
 		learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,
                                            50, 0.9, staircase=False)
 		optimizer = tf.train.AdamOptimizer(learning_rate)
-		grads_and_vars = optimizer.compute_gradients(loss, params)
+		trainable_params = [param for param in params if (not freeze_model) or 'lstm' not in param.name]
+		grads_and_vars = optimizer.compute_gradients(loss, trainable_params)
 		train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
 
 		saveable_params = []
@@ -90,7 +91,7 @@ def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_tra
 				saveable_params.append(param)
 		saver = tf.train.Saver(saveable_params, reshape=True)
 
-		print "Total number of params = " + str(count_number_trainable_params())
+		print "Total number of params = " + str(count_number_trainable_params(not freeze_model))
 
 		config=tf.ConfigProto()
 
@@ -172,12 +173,14 @@ def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_tra
 
 			return valid_acc_new_list, valid_acc_whole_list, new_test_accuracy, whole_test_accuracy
 
-def count_number_trainable_params():
+def count_number_trainable_params(count_lstm = True):
 	'''
 	Counts the number of trainable variables.
 	'''
 	tot_nb_params = 0
 	for trainable_variable in tf.trainable_variables():
+		if not count_lstm and 'lstm' in trainable_variable.name:
+			continue
 		shape = trainable_variable.get_shape() # e.g [D,F] or [W,H,C]
 		current_nb_params = get_nb_params_shape(shape)
 		tot_nb_params = tot_nb_params + current_nb_params
