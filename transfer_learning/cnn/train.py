@@ -16,12 +16,12 @@ tf.app.flags.DEFINE_string("max_in_seq_len", 30, "max in seq length")
 tf.app.flags.DEFINE_integer("max_data_size", 10000, "max training data size")
 tf.app.flags.DEFINE_integer("batch_size", 100, "batch size")
 tf.app.flags.DEFINE_integer("iterations", 30, "number of iterations")
-tf.app.flags.DEFINE_integer("embedding_size", 300, "size of embedding")
+tf.app.flags.DEFINE_integer("embedding_size", 128, "size of embedding")
 tf.app.flags.DEFINE_integer("no_of_base_intents", 8, "number of base intents")
 tf.app.flags.DEFINE_integer("total_no_of_intents", 15, "number of total intents")
 
 def plot_test_accuracy_versus_samples():
-	iterations = 30
+	iterations = 100
 	
 	no_pretrain_new_test_accuracy = []
 	no_pretrain_whole_test_accuracy = []
@@ -29,7 +29,7 @@ def plot_test_accuracy_versus_samples():
 	pretrained_freeze_whole_test_accuracy = []
 	pretrained_no_freeze_new_test_accuracy = []
 	pretrained_no_freeze_whole_test_accuracy = []
-	max_samples = 35
+	max_samples = 15
 	for i in range(1, max_samples):
 		print "training with " + str(i) + "sample(s)...\n\n\n"
 		_,_,new_test, whole_test = train_all_without_pretrained_model(iterations, i)
@@ -96,7 +96,7 @@ def plot_test_accuracy_versus_samples():
 # 3. with pretrained and non frozen model
 # From this plot we can infer how transfer learning helps quickly learn in few iterations
 def plot_test_accuracy_versus_iterations():
-	iterations = 100
+	iterations = 150
 	
 	no_pretrain_new_test_accuracy, no_pretrain_whole_test_accuracy, _, _ = train_all_without_pretrained_model(iterations, cm_file_name = './cm_without_pretrained.png')
 	print "with no pretrained model done ......\n\n\n"

@@ -142,7 +142,7 @@ def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_tra
 				sess.run([train_op, global_step, loss, accuracy], feed_dict={train_x: batch_xs, train_y: batch_ys, dropout_keep_prob:0.6})
 				
 				if base_training:
-					valid_x, valid_y = atis.get_base_valid_data()
+					valid_x, valid_y = atis.get_base_test_data()
 					x, y = atis.get_base_train_data()
 					valid_acc = sess.run(accuracy, feed_dict={train_x: valid_x, train_y: valid_y, dropout_keep_prob:1.0})
 					train_acc = sess.run(accuracy, feed_dict={train_x: x, train_y: y, dropout_keep_prob:1.0})
@@ -173,8 +173,8 @@ def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_tra
 				print("test accuracy: " + str(whole_test_accuracy))
 				new_test_accuracy = 0
 			else:
-				test_x, test_y = atis.get_whole_valid_data()
-				new_test_x, new_test_y = atis.get_only_new_valid_data()
+				test_x, test_y = atis.get_whole_test_data()
+				new_test_x, new_test_y = atis.get_only_new_test_data()
 				whole_test_accuracy = sess.run(accuracy, feed_dict={train_x: test_x, train_y: test_y, dropout_keep_prob:1.0})
 				new_test_accuracy = sess.run(accuracy, feed_dict={train_x: new_test_x, train_y: new_test_y, dropout_keep_prob:1.0})
 				print("test accuracy: " + str(whole_test_accuracy) + 

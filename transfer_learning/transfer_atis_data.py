@@ -153,8 +153,13 @@ class TransferAtisData(object):
 		#get transfer data
 		transfer_test_X, transfer_test_Y = self.get_only_new_test_data()
 
-		return (np.concatenate((base_test_X, transfer_test_X), axis = 0) , 
+		test_x, test_y =  (np.concatenate((base_test_X, transfer_test_X), axis = 0) , 
 			np.concatenate((base_test_Y, transfer_test_Y), axis = 0))
+		valid_x, valid_y = self.get_whole_valid_data(one_hot_y, one_hot_x)
+
+		return (np.concatenate((test_x, valid_x), axis = 0) , 
+			np.concatenate((test_y, valid_y), axis = 0))
+
 
 	def get_whole_train_data(self, one_hot_y=True, one_hot_x=False):
 		if self.get_number_of_base_labels() == 0:
@@ -174,10 +179,15 @@ class TransferAtisData(object):
 					one_hot_y, one_hot_x, self.total_no_of_class_labels)
 
 	def get_only_new_test_data(self, one_hot_y=True, one_hot_x=False):
-		return self.old_atis.get_input_output_data(
+		test_x, test_y =  self.old_atis.get_input_output_data(
 					self.in_seq_transfer_test, 
 					self.labels_transfer_test, 
 					one_hot_y, one_hot_x, self.total_no_of_class_labels)
+		valid_x, valid_y = self.get_only_new_valid_data(one_hot_y, one_hot_x)
+
+		return (np.concatenate((test_x, valid_x), axis = 0) , 
+			np.concatenate((test_y, valid_y), axis = 0))
+
 
 	def get_only_new_train_data(self, one_hot_y=True, one_hot_x=False):
 		return self.old_atis.get_input_output_data(
