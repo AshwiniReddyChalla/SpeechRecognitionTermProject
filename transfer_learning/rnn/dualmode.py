@@ -11,8 +11,8 @@ from sklearn.metrics import confusion_matrix
 
 def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_training = True, restore_from_ckpt = True, save_to_ckpt = False, freeze_model = False, confusion_matrix_file_name = None):
 	
-	no_of_fw_cells = 47
-	no_of_bw_cells = 47
+	no_of_fw_cells = 40
+	no_of_bw_cells = 40
 	num_features_total = no_of_fw_cells + no_of_bw_cells
 	normal_initializer = tf.random_normal_initializer(stddev=0.1)
 
@@ -77,7 +77,7 @@ def train(atis, max_in_seq_len, embedding_size, iterations, batch_size, base_tra
 		accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
 		params = tf.trainable_variables()
 		global_step = tf.Variable(0, trainable=False)
-		starter_learning_rate = 0.005
+		starter_learning_rate = 0.01
 		learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,
                                            50, 0.9, staircase=False)
 		optimizer = tf.train.AdamOptimizer(learning_rate)
