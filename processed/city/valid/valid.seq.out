@@ -1,6 +1,0 @@
-O O O O B-fromloc.city_name O B-airline_name I-airline_name O B-class_type I-class_type
-O B-city_name
-O B-city_name
-O O O B-airline_name O O O
-O O O O O B-airline_name O
-O O O B-airline_name O O
